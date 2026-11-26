@@ -330,7 +330,7 @@ button.ph{border:0;padding:0;cursor:zoom-in;display:block;width:100%}
 .fsec{font:11px var(--mono);letter-spacing:.24em;color:var(--amber);text-transform:uppercase;border-bottom:1px solid var(--line);padding-bottom:7px;margin-top:4px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:620px){.two{grid-template-columns:1fr}}
-.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));grid-auto-rows:1fr;gap:12px}
 .tcard{position:relative;display:flex;flex-direction:column;align-items:center;gap:0;border:1px solid var(--line2);border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(0,0,0,.3));padding:12px 10px 13px;cursor:pointer;color:inherit;text-align:center;overflow:hidden}
 .tcard:hover{border-color:var(--line)}
 .tcard.got{border-color:rgba(233,169,59,.5);background:linear-gradient(180deg,rgba(233,169,59,.1),rgba(0,0,0,.3))}
@@ -891,7 +891,7 @@ function pagehead(eb,title,sub,right){return '<div class="pagehead"><div><div cl
 function box(icon,title,right,body){return '<section class="panel"><div class="strip"><span>'+ic(icon)+esc(title)+'</span><span class="r">'+(right||'')+'</span></div><div class="pb stack">'+body+'</div></section>'}
 function navBtn(act,id,label,icon,sel,count){return '<button class="nav" data-act="'+act+'" data-id="'+id+'"'+(sel?' aria-current="page"':'')+'>'+ic(icon)+'<span>'+label+'</span>'+(count?'<span class="dot">'+count+'</span>':'')+'</button>'}
 var TABL={ficha:'Ficha',mochila:'Mochila',registros:'Registros',diario:'Diário',mensagens:'Mensagens',trofeus:'Troféus',mapa:'Mapa'};
-var ADML={jogadores:'Operadores',cofre:'Cofre do Mestre',chat:'Mensagens',registro:'Registro',mapa:'Mapa'};
+var ADML={jogadores:'Operadores',cofre:'Cofre do Mestre',chat:'Mensagens',trofeus:'Troféus',registro:'Registro',mapa:'Mapa'};
 function camp(){var tot=Math.max(1,Number(S.meta.tot)||1),cur=Math.max(0,Math.min(tot,Number(S.meta.ses)||0));return {tot:tot,cur:cur,pct:Math.round(cur/tot*100),left:tot-cur}}
 function campBar(){var c=camp();
   return '<div class="camp"><div class="cl"><span>Campanha</span><b>'+c.pct+'%</b></div>'+
@@ -1443,6 +1443,7 @@ var TROFD=[
 ];
 var TFIG=null,tdrag=null;
 function trofList(){return (S.trof&&S.trof.length)?S.trof:TROFD}
+function trofWho(tid){return S.players.filter(function(p){return (p.trof||[]).indexOf(tid)>-1})}
 function trofOf(id){var L=trofList(),i;for(i=0;i<L.length;i++)if(L[i].id===id)return L[i];return null}
 function figThumb(){
   if(TFIG)return TFIG;
@@ -1467,11 +1468,12 @@ function trofView(pid){
   });
   return h+'</div><p class="small muted">As figuras chegam até você fora da mesa. Aqui dentro ficam o registro e a peça para girar.</p>';
 }
-function trofModal(t,has){
+function trofModal(t,has,who){
   var b='<div class="fstage"><canvas id="fig3d"></canvas><span class="hintr">Arraste para girar</span></div>'+
     '<div class="fmeta"><h3>'+esc(t.n)+'</h3>'+
     '<div class="how">'+ic('star')+'<span><b>Como se conquista:</b> '+esc(t.how)+'</span></div>'+
-    '<p>'+esc(t.d)+'</p></div>';
+    '<p>'+esc(t.d)+'</p>'+
+    (who?'<div class="how">'+ic('people')+'<span><b>Com quem está:</b> '+(who.length?esc(who.map(function(x){return x.name}).join(', ')):'ninguém ainda')+'</span></div>':'')+'</div>';
   setModal(modalWrap(has?'Troféu conquistado':'Troféu',b));
   mountFig();
 }
@@ -1572,12 +1574,12 @@ function playerScreen(pid){
 function adminScreen(){
   if(ui.adm==='chat'){if(!ui.chat||!pl(ui.chat))ui.chat=S.players.length?S.players[0].id:null;if(ui.chat)markRead(ui.chat,'in')}
   var unIn=S.letters.filter(function(l){return dirOf(l)==='in'&&!l.read}).length;
-  var nav=navBtn('adm','jogadores','Operadores','people',ui.adm==='jogadores')+navBtn('adm','cofre','Cofre do Mestre','vault',ui.adm==='cofre')+navBtn('adm','chat','Mensagens','mail',ui.adm==='chat',unIn)+navBtn('adm','registro','Registro','log',ui.adm==='registro')+navBtn('adm','mapa','Mapa','map',ui.adm==='mapa');
+  var nav=navBtn('adm','jogadores','Operadores','people',ui.adm==='jogadores')+navBtn('adm','cofre','Cofre do Mestre','vault',ui.adm==='cofre')+navBtn('adm','chat','Mensagens','mail',ui.adm==='chat',unIn)+navBtn('adm','trofeus','Troféus','star',ui.adm==='trofeus')+navBtn('adm','registro','Registro','log',ui.adm==='registro')+navBtn('adm','mapa','Mapa','map',ui.adm==='mapa');
   var c=camp();
   var dt='<div class="metaset"><div class="datebox"><label class="lbl" for="gdate">Linha do tempo da campanha</label><div class="row" style="flex-wrap:nowrap"><input class="in" id="gdate" data-meta="date" value="'+esc(S.meta.date)+'" style="width:160px"><span class="calic">'+ic('cal')+'</span></div></div>'+
     '<div class="datebox"><label class="lbl" for="ses">Sessão de hoje</label><div class="row" style="flex-wrap:nowrap;align-items:center;gap:8px"><input class="in" id="ses" type="number" min="0" max="999" data-meta="ses" value="'+c.cur+'" style="width:76px"><span class="small muted">de</span><input class="in" id="tot" type="number" min="1" max="999" data-meta="tot" value="'+c.tot+'" style="width:76px"></div></div></div>';
   var h=ui.adm==='mapa'?'':'<div class="ph-chat">'+pagehead('// Acesso total','Painel do Mestre','Você vê tudo. Nenhum jogador vê o que é de outro jogador ou o que é seu.',dt)+'</div>';
-  h+=ui.adm==='jogadores'?admPlayers():ui.adm==='cofre'?admVault():ui.adm==='chat'?admChat():ui.adm==='mapa'?muralView():admLog();
+  h+=ui.adm==='jogadores'?admPlayers():ui.adm==='cofre'?admVault():ui.adm==='chat'?admChat():ui.adm==='trofeus'?admTrof():ui.adm==='mapa'?muralView():admLog();
   return layout(nav,h,ui.adm==='mapa'?'wide':false,campBar(),ADML[ui.adm]);
 }
 function itemRow(x,extra){
@@ -1627,6 +1629,22 @@ function powerBox(p,me){
     '<div><span class="lbl">Principal</span><div class="pwrtx">'+(pw?nl(pw):'<span class="muted">Ainda não escrita.</span>')+'</div></div></div>'+
     (me?'<div class="small muted" style="margin-top:10px">A escolha é definitiva: nem a elemental nem a principal mudam depois que a ficha é criada. Se precisar corrigir, fale com o Mestre.</div>':'');
   return box('flask','Habilidade',me?'':'<button class="btn sm" data-act="edit-player" data-id="'+p.id+'">'+ic('edit')+'Corrigir</button>',body);
+}
+function admTrof(){
+  var L=trofList(),th=figThumb();
+  var dados=S.players.length?L.filter(function(t){return trofWho(t.id).length}).length:0;
+  var h=box('star','Estante do Ato 1','<span class="cap">'+dados+'/'+L.length+' já na mão de alguém</span><button class="btn sm" data-act="trof-edit">'+ic('edit')+'Editar lista</button>',
+    '<div class="small muted">As dez peças inteiras, abertas. Clique em uma para girar a figura e reler a descrição. Para entregar, vá em Operadores e escolha o jogador.</div>');
+  h+='<div class="tgrid">';
+  L.forEach(function(t,i){
+    var w=trofWho(t.id);
+    h+='<button class="tcard got" data-act="trof-peek" data-id="'+t.id+'">'+
+      '<span class="num">'+String(i+1).padStart(2,'0')+'</span>'+
+      (th?'<img class="fig" alt="" src="'+th+'">':'<span class="fig"></span>')+
+      '<span class="nm">'+esc(t.n)+'</span>'+
+      '<span class="st">'+(w.length?esc(w.map(function(x){return x.name.split(' ')[0]}).join(', ')):'Com ninguém')+'</span></button>';
+  });
+  return h+'</div>';
 }
 function admVault(){
   var items=S.items.filter(function(x){return x.owner==='vault'});
@@ -2092,7 +2110,7 @@ document.addEventListener('click',function(e){
     trofModal(tt,true);
     return;
   }
-  if(a==='trof-peek'){var tk=trofOf(id);if(tk)trofModal(tk,false);return}
+  if(a==='trof-peek'){var tk=trofOf(id);if(tk)trofModal(tk,false,(ui.user&&ui.user.role==='admin'&&!ui.viewAs)?trofWho(id):null);return}
   if(a==='trof-give'){
     var gp=pl(id),gid=t.getAttribute('data-t');
     if(gp){
