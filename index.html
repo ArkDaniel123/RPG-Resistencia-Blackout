@@ -968,6 +968,8 @@ function sbErr(e){
   if(/duplicate key|already registered|already exists/i.test(m))return 'Esse usuário já existe. Escolha outro.';
   if(/Invalid login/i.test(m))return 'Usuário ou senha errados.';
   if(badMail(e))return 'O servidor recusou o endereço interno da conta. Avise o Mestre.';
+  if(/rate limit|too many requests|For security purposes/i.test(m))return 'O servidor está tentando mandar e-mail de confirmação e bateu no limite. Desligue "Confirm email" no Supabase.';
+  if(/not confirmed|Email not confirmed/i.test(m))return 'A conta existe mas está presa na confirmação de e-mail. Desligue "Confirm email" no Supabase.';
   if(/Password should be/i.test(m))return 'A senha precisa de pelo menos 6 caracteres.';
   if(/row-level security|violates/i.test(m))return 'Você não tem permissão para isso.';
   if(/Failed to fetch|NetworkError/i.test(m))return 'Sem conexão com o servidor.';
