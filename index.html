@@ -967,13 +967,16 @@ function sbErr(e){
   var m=(e&&(e.message||e.error_description))||'';
   if(/duplicate key|already registered|already exists/i.test(m))return 'Esse usuário já existe. Escolha outro.';
   if(/Invalid login/i.test(m))return 'Usuário ou senha errados.';
+  if(badMail(e))return 'O servidor recusou o endereço interno da conta. Avise o Mestre.';
   if(/Password should be/i.test(m))return 'A senha precisa de pelo menos 6 caracteres.';
   if(/row-level security|violates/i.test(m))return 'Você não tem permissão para isso.';
   if(/Failed to fetch|NetworkError/i.test(m))return 'Sem conexão com o servidor.';
   return m||'Não deu certo. Tente de novo.';
 }
 function okUser(u){return /^[a-z0-9_.-]{3,20}$/.test(String(u||''))}
-function mail(u){return String(u||'').toLowerCase()+'@blackout.local'}
+var MDOM=['blackout-rpg.com','users.noreply.github.com'];
+function mail(u,i){return String(u||'').toLowerCase()+'@'+MDOM[i||0]}
+function badMail(e){var m=(e&&(e.message||e.msg||e.error_description))||'';return /email/i.test(m)&&/invalid|not valid/i.test(m)}
 
 /* ---- linha <-> objeto ---- */
 function toPlayer(r){return {id:r.id,username:r.username,name:r.name,age:r.age||'',photo:r.photo||null,bio:r.bio||'',activity:r.activity||'',status:r.status||'Trabalhando',wanted:r.wanted||0,num:r.num||'',hue:r.hue||0,access:r.access||1,role:r.role||'',doses:r.doses||0,skills:r.skills||[],claims:r.claims||[],trof:r.trof||[],intro:!!r.intro,active:r.active!==false,master:!!r.is_master}}
@@ -1087,15 +1090,19 @@ function sbAfterAuth(uid,cb){
     cb&&cb(null);
   });
 }
-function sbSignIn(u,pw,cb){
-  SB.auth.signInWithPassword({email:mail(u),password:pw}).then(function(r){
-    if(r.error)return cb(sbErr(r.error));
+function sbSignIn(u,pw,cb,i){
+  i=i||0;
+  function next(e){if(i+1<MDOM.length)return sbSignIn(u,pw,cb,i+1);cb(sbErr(e))}
+  SB.auth.signInWithPassword({email:mail(u,i),password:pw}).then(function(r){
+    if(r.error)return next(r.error);
     sbAfterAuth(r.data.user.id,cb);
-  },function(e){cb(sbErr(e))});
+  },next);
 }
-function sbSignUp(u,pw,prof,cb){
-  SB.auth.signUp({email:mail(u),password:pw}).then(function(r){
-    if(r.error)return cb(sbErr(r.error));
+function sbSignUp(u,pw,prof,cb,i){
+  i=i||0;
+  function next(e){if(badMail(e)&&i+1<MDOM.length)return sbSignUp(u,pw,prof,cb,i+1);cb(sbErr(e))}
+  SB.auth.signUp({email:mail(u,i),password:pw}).then(function(r){
+    if(r.error)return next(r.error);
     var uid=r.data.user&&r.data.user.id;
     if(!uid)return cb('O servidor não devolveu a conta. Confira se a confirmação de e-mail está desligada no Supabase.');
     function ins(){
@@ -1107,11 +1114,11 @@ function sbSignUp(u,pw,prof,cb){
       },function(e){cb(sbErr(e))});
     }
     if(r.data.session)ins();
-    else SB.auth.signInWithPassword({email:mail(u),password:pw}).then(function(r3){
+    else SB.auth.signInWithPassword({email:mail(u,i),password:pw}).then(function(r3){
       if(r3.error)return cb('Conta criada, mas não deu para entrar: '+sbErr(r3.error));
       ins();
     },function(e){cb(sbErr(e))});
-  },function(e){cb(sbErr(e))});
+  },next);
 }
 function sbSignOut(){
   SBREADY=false;
