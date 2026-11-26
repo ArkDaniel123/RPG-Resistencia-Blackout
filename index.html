@@ -200,6 +200,10 @@ button.ph{border:0;padding:0;cursor:zoom-in;display:block;width:100%}
 .sect>h3,.sect-h{display:flex;align-items:center;gap:10px;font:14px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:400}
 .skills{display:flex;gap:6px;flex-wrap:wrap}
 .chip.pend{border-style:dashed;border-color:var(--amber);color:var(--amber);background:rgba(233,169,59,.07)}
+.chip.elem{color:var(--blue);background:rgba(83,174,222,.1);padding:4px 12px;font-size:14px}
+.locked{border:1px solid var(--line);background:rgba(255,255,255,.025);padding:10px 12px;color:var(--ink);font-size:15px}
+.pwr{display:grid;gap:14px}
+.pwrtx{margin-top:4px;line-height:1.55}
 .claimrow{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:7px 0;border-top:1px solid var(--line)}
 .claimrow .chip{margin-right:auto}
 
@@ -762,6 +766,8 @@ var STATUS_CLS={'Livre':'ok','Trabalhando':'warn','Em missão':'info','Foragido'
 var KINDS={item:'Item',fragmento:'Fragmento',registro:'Registro'};
 var CATS={pessoa:'Pessoal',ciencia:'Pesquisa',experimento:'Experimento',contencao:'Contenção',confidencial:'Confidencial',ultrassecreto:'Ultrassecreto',local:'Local',documento:'Documento'};
 var CAT_ICON={pessoa:'f-pessoal',ciencia:'f-pesquisa',experimento:'f-experimento',contencao:'f-contencao',confidencial:'f-confidencial',ultrassecreto:'f-ultrassecreto',local:'y-localizacao',documento:'t-relatorio'};
+var ELEMENTS=['Fogo (Pirocinese)','Água (Hidrocinese)','Terra (Geocinese)','Ar / Vento (Aerocinese)','Gelo (Criocinese)','Eletricidade / Raio (Eletrocinese)','Magma / Lava','Areia','Lama','Poeira / Cinzas','Vapor / Névoa','Fumaça','Plantas / Natureza (Fitocinese)','Madeira (Dendrocinese)','Metal (Metalocinese)','Cristal / Minerais','Vidro','Ossos (Osteocinese)','Clima / Tempestade (Atmocinese)','Som / Vibração (Acusticinese / Sismocinese)','Luz (Fotocinese)','Sombra / Trevas (Umbrocinese)','Magnetismo (Magnetocinese)','Gravidade (Gravitocinese)','Plasma / Energia','Radiação / Nuclear','Ácido','Veneno / Toxinas','Éter / Vazio','Espaço / Dimensional'];
+function elemOpts(){return [['','Nenhum']].concat(ELEMENTS.map(function(e){return [e,e]}))}
 var ROLES={'c-comando':'Comando','c-oficial':'Oficial','c-operador':'Operador','c-seguranca':'Segurança','c-pesquisador':'Pesquisador','c-engenheiro':'Engenheiro','c-medico':'Médico','c-analista':'Analista','c-ti':'T.I. / Dados','c-logistica':'Logística'};
 var ICON_GROUPS=[
   ['Básicos',[['blade','Lâmina'],['vial','Frasco'],['doc','Documento'],['key','Chave'],['tape','Fita'],['chip','Chip'],['map','Mapa'],['badge','Crachá'],['folder','Pasta'],['gun','Arma'],['box','Caixa']]],
@@ -981,8 +987,8 @@ function mail(u,i){return String(u||'').toLowerCase()+'@'+MDOM[i||0]}
 function badMail(e){var m=(e&&(e.message||e.msg||e.error_description))||'';return /email/i.test(m)&&/invalid|not valid/i.test(m)}
 
 /* ---- linha <-> objeto ---- */
-function toPlayer(r){return {id:r.id,username:r.username,name:r.name,age:r.age||'',photo:r.photo||null,bio:r.bio||'',activity:r.activity||'',status:r.status||'Trabalhando',wanted:r.wanted||0,num:r.num||'',hue:r.hue||0,access:r.access||1,role:r.role||'',doses:r.doses||0,skills:r.skills||[],claims:r.claims||[],trof:r.trof||[],intro:!!r.intro,active:r.active!==false,master:!!r.is_master}}
-function fromPlayer(p){return {id:p.id,username:p.username,name:p.name,age:String(p.age||''),photo:p.photo||null,bio:p.bio||'',activity:p.activity||'',status:p.status||'Trabalhando',wanted:+p.wanted||0,num:p.num||'',hue:+p.hue||0,access:+p.access||1,role:p.role||'',doses:+p.doses||0,skills:p.skills||[],claims:p.claims||[],trof:p.trof||[],intro:!!p.intro,active:p.active!==false,is_master:!!p.master}}
+function toPlayer(r){return {id:r.id,username:r.username,name:r.name,age:r.age||'',photo:r.photo||null,bio:r.bio||'',activity:r.activity||'',status:r.status||'Trabalhando',wanted:r.wanted||0,num:r.num||'',hue:r.hue||0,access:r.access||1,role:r.role||'',doses:r.doses||0,skills:r.skills||[],claims:r.claims||[],power:r.main_skill||'',elem:r.element||'',trof:r.trof||[],intro:!!r.intro,active:r.active!==false,master:!!r.is_master}}
+function fromPlayer(p){return {id:p.id,username:p.username,name:p.name,age:String(p.age||''),photo:p.photo||null,bio:p.bio||'',activity:p.activity||'',status:p.status||'Trabalhando',wanted:+p.wanted||0,num:p.num||'',hue:+p.hue||0,access:+p.access||1,role:p.role||'',doses:+p.doses||0,skills:p.skills||[],claims:p.claims||[],main_skill:p.power||'',element:p.elem||'',trof:p.trof||[],intro:!!p.intro,active:p.active!==false,is_master:!!p.master}}
 function toItem(r){return {id:r.id,owner:r.owner||'vault',origin:r.origin||'mestre',by:r.by_name||'',name:r.name,kind:r.kind||'item',cat:r.cat||'documento',icon:r.icon||'doc',stage:r.stage||1,rumor:r.rumor||'',partial:r.partial||'',full:r.full_text||'',img:r.img||null,doc:r.doc||null,locks:r.locks||[]}}
 function fromItem(x){return {id:x.id,owner:(x.owner==='vault'||!x.owner)?null:x.owner,origin:x.origin||'mestre',by_name:x.by||'',name:x.name,kind:x.kind,cat:x.cat,icon:x.icon,stage:+x.stage||1,rumor:x.rumor||'',partial:x.partial||'',full_text:x.full||'',img:x.img||null,doc:x.doc||null,locks:x.locks||[]}}
 function toLetter(r){return {id:r.id,to:r.to_player,dir:r.dir||'out',from:r.from_name||'',kind:'secreta',title:r.title||'',body:r.body||'',img:r.img||null,att:r.att||null,read:!!r.read,ts:Number(r.ts)||0}}
@@ -1151,7 +1157,7 @@ function isOwn(item,pid){return item&&item.origin==='jogador'&&item.by===pid&&it
 function playerView(pid){
   var p=pl(pid);
   return {
-    me:{id:p.id,name:p.name,age:p.age,status:p.status,activity:p.activity,wanted:p.wanted,num:p.num,hue:p.hue,photo:p.photo,bio:p.bio,skills:p.skills,claims:p.claims||[],doses:p.doses,access:p.access||1,role:p.role||''},
+    me:{id:p.id,name:p.name,age:p.age,status:p.status,activity:p.activity,wanted:p.wanted,num:p.num,hue:p.hue,photo:p.photo,bio:p.bio,skills:p.skills,claims:p.claims||[],power:p.power||'',elem:p.elem||'',doses:p.doses,access:p.access||1,role:p.role||''},
     items:S.items.filter(function(x){return x.owner===pid}),
     notes:S.notes.filter(function(x){return x.owner===pid}).sort(function(a,b){return b.ts-a.ts}),
     letters:S.letters.filter(function(x){return x.to===pid}).sort(function(a,b){return b.ts-a.ts}),
@@ -1396,7 +1402,9 @@ function sbSignupView(){
     field('age','Idade','<input class="in" id="age" name="age" value="'+esc(d.age||'')+'" maxlength="12">')+'</div>';
   h+=field('act','O que ele está fazendo agora','<input class="in" id="act" name="act" value="'+esc(d.act||'')+'" maxlength="120">','Aparece na ficha como atividade atual.');
   h+=field('bio','Histórico','<textarea class="in" id="bio" name="bio" maxlength="1200">'+esc(d.bio||'')+'</textarea>','Como ele foi parar dentro da instalação.');
-  h+=field('claims','Habilidades que você acha que tem','<textarea class="in" id="claims" name="claims" maxlength="600">'+esc(d.claims||'')+'</textarea>','Uma por linha. Entram como "em teste" até o Mestre confirmar.');
+  h+='<div class="fsec">Habilidade</div>';
+  h+=field('power','Habilidade principal','<textarea class="in" id="power" name="power" maxlength="600">'+esc(d.power||'')+'</textarea>','Escreva com suas palavras o que seu personagem consegue fazer.');
+  h+=field('elem','Habilidade elemental','<select class="in" id="elem" name="elem">'+elemOpts().map(function(o){return '<option value="'+esc(o[0])+'"'+(o[0]===(d.elem||'')?' selected':'')+'>'+esc(o[1])+'</option>'}).join('')+'</select>','Escolha uma só. <strong>Depois de criar a ficha não dá para trocar</strong> — nem a elemental, nem a principal.');
   h+=(ui.err?'<div class="err" role="alert">'+esc(ui.err)+'</div>':'');
   h+='<button class="btn primary" type="submit">'+ic('id')+'Criar ficha e entrar</button></form>';
   h+='<button class="btn" data-act="go-login">Já tenho ficha</button>';
@@ -1531,6 +1539,7 @@ function playerScreen(pid){
   if(ui.tab==='ficha'){
     h+=badge(m,true)+'<div class="row"><button class="btn sm" data-act="edit-me">'+ic('edit')+'Editar perfil</button></div>';
     h+=box('file','Histórico','',m.bio?nl(m.bio):'<span class="muted">Escreva o histórico do seu personagem em "Editar perfil".</span>');
+    h+=powerBox(m,true);
     h+=box('star','Habilidades confirmadas','',(m.skills&&m.skills.length)?'<div class="skills">'+m.skills.map(function(s){return '<span class="chip info">'+esc(s)+'</span>'}).join('')+'</div>':'<div class="empty-note">Nenhuma habilidade confirmada. O Mestre registra aqui quando você provar uma em jogo.</div>');
     h+=box('flask','Habilidades em teste','<button class="btn sm" data-act="edit-me">'+ic('edit')+'Escrever</button>',(m.claims&&m.claims.length)?'<div class="skills">'+m.claims.map(function(s){return '<span class="chip pend">'+esc(s)+'</span>'}).join('')+'</div><div class="small muted">Só você e o Mestre leem esta lista. Quando você provar uma delas em jogo, ele passa para as confirmadas.</div>':'<div class="empty-note">Escreva aqui o que você desconfia que seu personagem consegue fazer. O Mestre vê e confirma quando acontecer na mesa.</div>');
     h+=box('flask','Doses recebidas','','<span class="mono">'+esc(m.doses||0)+' (controlado pelo Mestre)</span>');
@@ -1602,6 +1611,7 @@ function admPlayers(){
       var on=tg.indexOf(x.id)>-1;
       return '<button class="tchip" data-act="trof-give" data-id="'+p.id+'" data-t="'+x.id+'" aria-pressed="'+on+'" title="'+esc(x.how)+'">'+(on?ic('star'):'')+String(i+1).padStart(2,'0')+' · '+esc(x.n)+'</button>';
     }).join('')+'</div><div class="small muted" style="margin-top:9px">Clique para entregar ou retirar. O jogador vê a figura e a descrição; o que ainda não ganhou aparece como silhueta.</div>');
+  h+=powerBox(p,false);
   h+=box('file','Ficha do jogador','<button class="btn sm" data-act="intro-reset" data-id="'+p.id+'">'+ic('book')+(p.intro?'Mostrar a abertura de novo':'Vai ver a abertura')+'</button>','<div class="small"><span class="lbl">Histórico</span><br>'+(p.bio?nl(p.bio):'<span class="muted">Vazio</span>')+'</div><div class="small"><span class="lbl">Habilidades confirmadas</span><br>'+((p.skills&&p.skills.length)?esc(p.skills.join(', ')):'<span class="muted">Nenhuma</span>')+' · <span class="lbl">Doses</span> '+esc(p.doses||0)+'</div>'+
     '<div class="small"><span class="lbl">Em teste (escritas por ele)</span></div>'+
     (cl.length?cl.map(function(c,i){return '<div class="claimrow"><span class="chip pend">'+esc(c)+'</span><button class="btn sm primary" data-act="confirm-skill" data-id="'+p.id+'" data-n="'+i+'">'+ic('star')+'Confirmar</button><button class="btn sm" data-act="drop-claim" data-id="'+p.id+'" data-n="'+i+'">'+ic('trash')+'Descartar</button></div>'}).join(''):'<div class="empty-note">Ele ainda não escreveu nenhuma.</div>'));
@@ -1609,6 +1619,14 @@ function admPlayers(){
   h+=box('edit','Notas do Mestre','','<div class="field"><label for="notes">Só você vê estas notas</label><textarea class="in" id="notes" data-notes="'+p.id+'">'+esc(p.notes)+'</textarea></div>');
   h+=box('mail','Mensagens deste jogador','',ls.length?ls.map(function(l){return '<div class="logline"><time>'+fmt(l.ts)+'</time><span><strong>'+esc(l.title)+'</strong> ('+esc(l.from)+')<br>'+nl(l.body)+'</span></div>'}).join(''):'<div class="muted small">Nenhuma mensagem.</div>');
   return h+'</div></div>';
+}
+function powerBox(p,me){
+  var el=p.elem||'',pw=String(p.power||'').trim();
+  var body='<div class="pwr">'+
+    '<div><span class="lbl">Elemental</span><br>'+(el?'<span class="chip elem">'+esc(el)+'</span>':'<span class="chip">Nenhum</span>')+'</div>'+
+    '<div><span class="lbl">Principal</span><div class="pwrtx">'+(pw?nl(pw):'<span class="muted">Ainda não escrita.</span>')+'</div></div></div>'+
+    (me?'<div class="small muted" style="margin-top:10px">A escolha é definitiva: nem a elemental nem a principal mudam depois que a ficha é criada. Se precisar corrigir, fale com o Mestre.</div>':'');
+  return box('flask','Habilidade',me?'':'<button class="btn sm" data-act="edit-player" data-id="'+p.id+'">'+ic('edit')+'Corrigir</button>',body);
 }
 function admVault(){
   var items=S.items.filter(function(x){return x.owner==='vault'});
@@ -1697,6 +1715,11 @@ function profileForm(p,admin){
     '<div class="two">'+field('name','Nome',inp('name',p.name,'required maxlength="60"'))+field('age','Idade',inp('age',p.age,'type="number" min="1" max="120"'))+'</div>'+
     field('activity','Atividade atual','<input class="in" id="activity" name="activity" maxlength="90" value="'+esc(p.activity)+'">','O que seu personagem está fazendo agora.')+
     field('bio','Histórico','<textarea class="in" id="bio" name="bio" maxlength="1200">'+esc(p.bio)+'</textarea>');
+  var lockedP=!admin&&!!(p.power||'').trim(),lockedE=!admin&&!!(p.elem||'');
+  b+=lockedP?field('power','Habilidade principal','<div class="locked">'+(esc(p.power||'')||'<span class="muted">Vazia</span>')+'</div>','Definida na criação da ficha. Só o Mestre muda.')
+          :field('power','Habilidade principal','<textarea class="in" id="power" name="power" maxlength="600">'+esc(p.power||'')+'</textarea>',admin?'':'Depois de salvar, isso não muda mais.');
+  b+=lockedE?field('elem','Habilidade elemental','<div class="locked">'+(esc(p.elem||'')||'<span class="muted">Nenhum</span>')+'</div>','Escolhida na criação da ficha. Só o Mestre muda.')
+          :field('elem','Habilidade elemental',sel('elem',elemOpts(),p.elem||''),admin?'':'Escolha uma só. Depois de salvar, não dá para trocar.');
   if(!admin)b+=field('claims','Habilidades que você acha que tem','<textarea class="in" id="claims" name="claims" maxlength="600">'+esc((p.claims||[]).join('\n'))+'</textarea>','Uma por linha. Elas entram como "em teste" até o Mestre confirmar.');
   if(admin){
     b+='<div class="two">'+field('status','Situação',sel('status',STATUSES.map(function(s){return [s,s]}),p.status))+field('wanted','Procurado (0 a 5)',sel('wanted',[0,1,2,3,4,5].map(function(n){return [n,n]}),p.wanted))+'</div>'+
@@ -2462,6 +2485,8 @@ document.addEventListener('submit',function(e){
     if(!admin&&!tgt)return;
     var name=String(fd.get('name')||'').trim();if(!name){err('Informe o nome.');return}
     var data={name:name,age:Number(fd.get('age'))||0,activity:String(fd.get('activity')||'').trim(),bio:String(fd.get('bio')||'').trim()};
+    if(admin||!tgt||!String(tgt.power||'').trim())data.power=String(fd.get('power')||'').trim();
+    if(admin||!tgt||!String(tgt.elem||''))data.elem=String(fd.get('elem')||'');
     if(!admin)data.claims=String(fd.get('claims')||'').split('\n').map(function(s){return s.trim()}).filter(Boolean).slice(0,12);
     if(admin){data.status=fd.get('status');data.wanted=Number(fd.get('wanted'))||0;data.doses=Number(fd.get('doses'))||0;data.access=Math.min(4,Math.max(1,Number(fd.get('access'))||1));data.role=String(fd.get('role')||'');data.pin=String(fd.get('pin')||'1234');data.skills=String(fd.get('skills')||'').split('\n').map(function(s){return s.trim()}).filter(Boolean)}
     if(tgt){Object.keys(data).forEach(function(k){tgt[k]=data[k]});tgt.photo=pendImg('photo',tgt.photo);addLog('Perfil de '+tgt.name+' atualizado'+(admin?' pelo Mestre.':'.'))}
@@ -2481,14 +2506,14 @@ document.addEventListener('submit',function(e){
   }
   if(kind==='signup'){
     var nu=String(fd.get('u')||'').trim().toLowerCase(),np=String(fd.get('pw')||'');
-    ui.sign={u:nu,nm:String(fd.get('nm')||''),age:String(fd.get('age')||''),act:String(fd.get('act')||''),bio:String(fd.get('bio')||''),claims:String(fd.get('claims')||'')};
+    ui.sign={u:nu,nm:String(fd.get('nm')||''),age:String(fd.get('age')||''),act:String(fd.get('act')||''),bio:String(fd.get('bio')||''),power:String(fd.get('power')||''),elem:String(fd.get('elem')||'')};
     if(!okUser(nu)){err('Usuário inválido. Use de 3 a 20 letras minúsculas, números, ponto, hífen ou _.');return}
     if(np.length<6){err('A senha precisa de pelo menos 6 caracteres.');return}
     var nn=String(fd.get('nm')||'').trim();
     if(!nn){err('Escreva o nome do personagem.');return}
     var prof={name:nn,age:String(fd.get('age')||'').trim(),photo:pendImg('photo',null)||null,
       activity:String(fd.get('act')||'').trim(),bio:String(fd.get('bio')||'').trim(),
-      claims:String(fd.get('claims')||'').split('\n').map(function(z){return z.trim()}).filter(Boolean).slice(0,12),
+      claims:[],power:String(fd.get('power')||'').trim(),elem:String(fd.get('elem')||''),
       status:'Trabalhando',wanted:0,num:String(Math.floor(1000+Math.random()*8999)),hue:Math.floor(Math.random()*360),
       access:1,role:'',doses:0,skills:[],trof:[]};
     ui.err='';toast('Criando sua ficha…');
