@@ -1401,9 +1401,9 @@ function sbSignupView(){
   h+='<div class="two">'+field('nm','Nome do personagem','<input class="in" id="nm" name="nm" value="'+esc(d.nm||'')+'" maxlength="40" required>')+
     field('age','Idade','<input class="in" id="age" name="age" value="'+esc(d.age||'')+'" maxlength="12">')+'</div>';
   h+=field('act','O que ele está fazendo agora','<input class="in" id="act" name="act" value="'+esc(d.act||'')+'" maxlength="120">','Aparece na ficha como atividade atual.');
-  h+=field('bio','Histórico','<textarea class="in" id="bio" name="bio" maxlength="1200">'+esc(d.bio||'')+'</textarea>','Como ele foi parar dentro da instalação.');
+  h+=field('bio','Histórico','<textarea class="in" id="bio" name="bio" maxlength="6000">'+esc(d.bio||'')+'</textarea>','Como ele foi parar dentro da instalação.');
   h+='<div class="fsec">Habilidade</div>';
-  h+=field('power','Habilidade principal','<textarea class="in" id="power" name="power" maxlength="600">'+esc(d.power||'')+'</textarea>','Escreva com suas palavras o que seu personagem consegue fazer.');
+  h+=field('power','Habilidade principal','<textarea class="in" id="power" name="power" maxlength="4000">'+esc(d.power||'')+'</textarea>','Escreva com suas palavras o que seu personagem consegue fazer.');
   h+=field('elem','Habilidade elemental','<select class="in" id="elem" name="elem">'+elemOpts().map(function(o){return '<option value="'+esc(o[0])+'"'+(o[0]===(d.elem||'')?' selected':'')+'>'+esc(o[1])+'</option>'}).join('')+'</select>','Escolha uma só. <strong>Depois de criar a ficha não dá para trocar</strong> — nem a elemental, nem a principal.');
   h+=(ui.err?'<div class="err" role="alert">'+esc(ui.err)+'</div>':'');
   h+='<button class="btn primary" type="submit">'+ic('id')+'Criar ficha e entrar</button></form>';
@@ -1655,6 +1655,16 @@ function admLog(){
 }
 
 /* ---------- modais ---------- */
+function charsLeft(t){
+  var mx=parseInt(t.getAttribute('maxlength')||'0',10);
+  if(!mx)return;
+  var f=t.closest&&t.closest('.field');if(!f)return;
+  var c=f.querySelector('.cnt'),left=mx-t.value.length;
+  if(left>200){if(c&&c.parentNode)c.parentNode.removeChild(c);return}
+  if(!c){c=document.createElement('span');c.className='cnt';(f.querySelector('.small.muted')||f).appendChild(c)}
+  c.textContent=' — faltam '+left+(left===1?' caractere':' caracteres');
+  c.style.color=left<=30?'var(--red)':'var(--amber)';
+}
 function field(id,label,inner,hint){return '<div class="field"><label for="'+id+'">'+label+'</label>'+inner+(hint?'<span class="small muted">'+hint+'</span>':'')+'</div>'}
 function inp(id,val,extra){return '<input class="in" id="'+id+'" name="'+id+'" value="'+esc(val)+'" '+(extra||'')+'>'}
 function sel(id,opts,cur){return '<select class="in" id="'+id+'" name="'+id+'">'+opts.map(function(o){return '<option value="'+esc(o[0])+'"'+(String(o[0])===String(cur)?' selected':'')+'>'+esc(o[1])+'</option>'}).join('')+'</select>'}
@@ -1732,13 +1742,13 @@ function profileForm(p,admin){
   var b='<form class="stack" data-form="profile" data-admin="'+(admin?'1':'')+'" data-id="'+(p.id||'')+'">'+imgField('photo',p.photo,'Foto')+
     '<div class="two">'+field('name','Nome',inp('name',p.name,'required maxlength="60"'))+field('age','Idade',inp('age',p.age,'type="number" min="1" max="120"'))+'</div>'+
     field('activity','Atividade atual','<input class="in" id="activity" name="activity" maxlength="90" value="'+esc(p.activity)+'">','O que seu personagem está fazendo agora.')+
-    field('bio','Histórico','<textarea class="in" id="bio" name="bio" maxlength="1200">'+esc(p.bio)+'</textarea>');
+    field('bio','Histórico','<textarea class="in" id="bio" name="bio" maxlength="6000">'+esc(p.bio)+'</textarea>');
   var lockedP=!admin&&!!(p.power||'').trim(),lockedE=!admin&&!!(p.elem||'');
   b+=lockedP?field('power','Habilidade principal','<div class="locked">'+(esc(p.power||'')||'<span class="muted">Vazia</span>')+'</div>','Definida na criação da ficha. Só o Mestre muda.')
-          :field('power','Habilidade principal','<textarea class="in" id="power" name="power" maxlength="600">'+esc(p.power||'')+'</textarea>',admin?'':'Depois de salvar, isso não muda mais.');
+          :field('power','Habilidade principal','<textarea class="in" id="power" name="power" maxlength="4000">'+esc(p.power||'')+'</textarea>',admin?'':'Depois de salvar, isso não muda mais.');
   b+=lockedE?field('elem','Habilidade elemental','<div class="locked">'+(esc(p.elem||'')||'<span class="muted">Nenhum</span>')+'</div>','Escolhida na criação da ficha. Só o Mestre muda.')
           :field('elem','Habilidade elemental',sel('elem',elemOpts(),p.elem||''),admin?'':'Escolha uma só. Depois de salvar, não dá para trocar.');
-  if(!admin)b+=field('claims','Habilidades que você acha que tem','<textarea class="in" id="claims" name="claims" maxlength="600">'+esc((p.claims||[]).join('\n'))+'</textarea>','Uma por linha. Elas entram como "em teste" até o Mestre confirmar.');
+  if(!admin)b+=field('claims','Habilidades que você acha que tem','<textarea class="in" id="claims" name="claims" maxlength="2000">'+esc((p.claims||[]).join('\n'))+'</textarea>','Uma por linha. Elas entram como "em teste" até o Mestre confirmar.');
   if(admin){
     b+='<div class="two">'+field('status','Situação',sel('status',STATUSES.map(function(s){return [s,s]}),p.status))+field('wanted','Procurado (0 a 5)',sel('wanted',[0,1,2,3,4,5].map(function(n){return [n,n]}),p.wanted))+'</div>'+
       '<div class="two">'+field('doses','Doses recebidas',inp('doses',p.doses||0,'type="number" min="0"'))+(SB?'':field('pin','PIN de acesso',inp('pin',p.pin,'required')))+'</div>'+
@@ -2256,6 +2266,7 @@ document.addEventListener('change',function(e){
 });
 document.addEventListener('input',function(e){
   var t=e.target;
+  if(t.tagName==='TEXTAREA')charsLeft(t);
   if(t.matches&&t.matches('[data-draft]')){ui.draft=t.value;return}
   if(t.id==='msize'&&MB.sel){var se=document.querySelector('.mi[data-mi="'+MB.sel+'"]');if(se)se.style.setProperty('--s',t.value);return}
   if(t.getAttribute&&t.getAttribute('data-cfi')){
