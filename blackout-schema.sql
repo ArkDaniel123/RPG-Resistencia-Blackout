@@ -106,7 +106,8 @@ $$;
 alter table players add column if not exists main_skill text default '';
 alter table players add column if not exists element    text default '';
 
--- Habilidade escolhida é definitiva: o jogador não troca, só o Mestre.
+-- A habilidade elemental é definitiva: o jogador não troca, só o Mestre.
+-- A principal ele reescreve quando quiser (o Mestre é avisado no registro).
 create or replace function lock_power()
 returns trigger
 language plpgsql
@@ -116,9 +117,6 @@ as $$
 begin
   if is_master() then
     return new;
-  end if;
-  if coalesce(old.main_skill,'') <> '' then
-    new.main_skill := old.main_skill;
   end if;
   if coalesce(old.element,'') <> '' then
     new.element := old.element;

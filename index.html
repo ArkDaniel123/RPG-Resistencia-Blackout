@@ -1604,7 +1604,7 @@ function admPlayers(){
   var items=S.items.filter(function(x){return x.owner===p.id}),notes=S.notes.filter(function(x){return x.owner===p.id}).sort(function(a,b){return b.ts-a.ts});
   var ls=S.letters.filter(function(l){return l.to===p.id}).sort(function(a,b){return b.ts-a.ts});
   h+=badge(p,false);
-  h+='<div class="row acts"><button class="btn primary" data-act="view-as" data-id="'+p.id+'">'+ic('id')+'Ver como jogador</button><button class="btn" data-act="edit-player" data-id="'+p.id+'">'+ic('edit')+'Editar perfil</button><button class="btn" data-act="open-chat" data-id="'+p.id+'">'+ic('mail')+'Enviar mensagem</button><button class="btn '+(p.active?'danger':'primary')+'" data-act="toggle-active" data-id="'+p.id+'" title="'+(p.active?'O jogador vira NPC e continua com os itens':'Volta a ser jogador')+'">'+ic(p.active?'skull':'people')+(p.active?'Tirar da campanha':'Voltar à campanha')+'</button></div>';
+  h+='<div class="row acts"><button class="btn primary" data-act="view-as" data-id="'+p.id+'">'+ic('id')+'Ver como jogador</button><button class="btn" data-act="edit-player" data-id="'+p.id+'">'+ic('edit')+'Editar perfil</button><button class="btn" data-act="open-chat" data-id="'+p.id+'">'+ic('mail')+'Enviar mensagem</button><button class="btn '+(p.active?'danger':'primary')+'" data-act="toggle-active" data-id="'+p.id+'" title="'+(p.active?'O jogador vira NPC e continua com os itens':'Volta a ser jogador')+'">'+ic(p.active?'skull':'people')+(p.active?'Tirar da campanha':'Voltar à campanha')+'</button><button class="btn danger" data-act="del-player" data-id="'+p.id+'" title="Apaga a ficha de vez. Use só para teste ou engano.">'+ic('trash')+'Excluir ficha</button></div>';
   h+=box('folder','Itens e registros','<button class="btn sm" data-act="give-from-vault" data-id="'+p.id+'">'+ic('gift')+'Dar do cofre</button><button class="btn sm primary" data-act="new-item" data-id="'+p.id+'">'+ic('plus')+'Criar</button>',items.length?items.map(function(x){return itemRow(x)}).join(''):'<div class="empty-note">Sem itens. Dê um do cofre ou crie um novo.</div>');
   var cl=(p.claims||[]);
   var TL=trofList(),tg=p.trof||[];
@@ -1655,6 +1655,8 @@ function admLog(){
 }
 
 /* ---------- modais ---------- */
+var DIFL={name:'nome',age:'idade',activity:'atividade',bio:'histórico',power:'habilidade principal',claims:'habilidades em teste'};
+function corta(s){s=String(s==null?'':s).replace(/\s+/g,' ').trim();return s?(s.length>120?s.slice(0,120)+'…':s):'(vazio)'}
 function charsLeft(t){
   var mx=parseInt(t.getAttribute('maxlength')||'0',10);
   if(!mx)return;
@@ -1743,9 +1745,8 @@ function profileForm(p,admin){
     '<div class="two">'+field('name','Nome',inp('name',p.name,'required maxlength="60"'))+field('age','Idade',inp('age',p.age,'type="number" min="1" max="120"'))+'</div>'+
     field('activity','Atividade atual','<input class="in" id="activity" name="activity" maxlength="90" value="'+esc(p.activity)+'">','O que seu personagem está fazendo agora.')+
     field('bio','Histórico','<textarea class="in" id="bio" name="bio" maxlength="6000">'+esc(p.bio)+'</textarea>');
-  var lockedP=!admin&&!!(p.power||'').trim(),lockedE=!admin&&!!(p.elem||'');
-  b+=lockedP?field('power','Habilidade principal','<div class="locked">'+(esc(p.power||'')||'<span class="muted">Vazia</span>')+'</div>','Definida na criação da ficha. Só o Mestre muda.')
-          :field('power','Habilidade principal','<textarea class="in" id="power" name="power" maxlength="4000">'+esc(p.power||'')+'</textarea>',admin?'':'Depois de salvar, isso não muda mais.');
+  var lockedE=!admin&&!!(p.elem||'');
+  b+=field('power','Habilidade principal','<textarea class="in" id="power" name="power" maxlength="4000">'+esc(p.power||'')+'</textarea>',admin?'':'Pode reescrever quando quiser — mas combine com o Mestre antes, ele é avisado de toda mudança.');
   b+=lockedE?field('elem','Habilidade elemental','<div class="locked">'+(esc(p.elem||'')||'<span class="muted">Nenhum</span>')+'</div>','Escolhida na criação da ficha. Só o Mestre muda.')
           :field('elem','Habilidade elemental',sel('elem',elemOpts(),p.elem||''),admin?'':'Escolha uma só. Depois de salvar, não dá para trocar.');
   if(!admin)b+=field('claims','Habilidades que você acha que tem','<textarea class="in" id="claims" name="claims" maxlength="2000">'+esc((p.claims||[]).join('\n'))+'</textarea>','Uma por linha. Elas entram como "em teste" até o Mestre confirmar.');
@@ -2211,6 +2212,27 @@ document.addEventListener('click',function(e){
     }
     return;
   }
+  if(a==='del-player'){
+    var dp=pl(id);if(!dp)return;
+    var nit=S.items.filter(function(x){return x.owner===dp.id}).length;
+    setModal(modalWrap('Excluir a ficha de '+dp.name,
+      '<div class="stack"><p>Isto apaga <strong>'+esc(dp.name)+'</strong> do sistema de vez: a ficha, o diário e as mensagens recebidas.'+
+      (nit?' Os '+nit+(nit===1?' item dele volta':' itens dele voltam')+' para o Cofre do Mestre.':'')+'</p>'+
+      '<p class="small muted">Não dá para desfazer. Se for só tirar da campanha, feche isto e use <strong>Tirar da campanha</strong> — ali ele vira NPC e nada se perde.</p>'+
+      (dp.username?'<p class="small muted">O login <strong>'+esc(dp.username)+'</strong> continua existindo no servidor. Apague em Authentication → Users se quiser liberar esse nome de novo.</p>':'')+
+      '<button class="btn danger" data-act="del-player-ok" data-id="'+dp.id+'">'+ic('skull')+'Excluir definitivamente</button></div>'));
+    return}
+  if(a==='del-player-ok'){
+    var dq=pl(id);if(!dq)return;
+    var dn=dq.name,du=dq.username||'';
+    S.items.forEach(function(x){if(x.owner===dq.id)x.owner='vault'});
+    S.letters=S.letters.filter(function(l){return l.to!==dq.id});
+    S.notes=S.notes.filter(function(n){return n.owner!==dq.id});
+    S.players=S.players.filter(function(x){return x.id!==dq.id});
+    if(ui.sel===dq.id)ui.sel=S.players.length?S.players[0].id:null;
+    addLog('Ficha de '+dn+' excluída pelo Mestre'+(du?' (login '+du+').':'.'));
+    save();setModal(null);render();toast('Ficha excluída.');
+    return}
   if(a==='toggle-active'){var p=pl(id);p.active=!p.active;addLog(p.name+(p.active?' voltou à campanha.':' saiu da campanha e agora é NPC.'));save();render();toast(p.active?'Jogador de volta à campanha.':'Agora é NPC. Os itens continuam com ele.');return}
   if(a==='new-item'){itemForm(null,id);return}
   if(a==='edit-item'){var x=it(id);itemForm(x,x.owner);return}
@@ -2514,11 +2536,25 @@ document.addEventListener('submit',function(e){
     if(!admin&&!tgt)return;
     var name=String(fd.get('name')||'').trim();if(!name){err('Informe o nome.');return}
     var data={name:name,age:Number(fd.get('age'))||0,activity:String(fd.get('activity')||'').trim(),bio:String(fd.get('bio')||'').trim()};
-    if(admin||!tgt||!String(tgt.power||'').trim())data.power=String(fd.get('power')||'').trim();
+    data.power=String(fd.get('power')||'').trim();
     if(admin||!tgt||!String(tgt.elem||''))data.elem=String(fd.get('elem')||'');
     if(!admin)data.claims=String(fd.get('claims')||'').split('\n').map(function(s){return s.trim()}).filter(Boolean).slice(0,12);
     if(admin){data.status=fd.get('status');data.wanted=Number(fd.get('wanted'))||0;data.doses=Number(fd.get('doses'))||0;data.access=Math.min(4,Math.max(1,Number(fd.get('access'))||1));data.role=String(fd.get('role')||'');data.pin=String(fd.get('pin')||'1234');data.skills=String(fd.get('skills')||'').split('\n').map(function(s){return s.trim()}).filter(Boolean)}
-    if(tgt){Object.keys(data).forEach(function(k){tgt[k]=data[k]});tgt.photo=pendImg('photo',tgt.photo);addLog('Perfil de '+tgt.name+' atualizado'+(admin?' pelo Mestre.':'.'))}
+    if(tgt){
+      var ant={},fot=tgt.photo||'';
+      Object.keys(DIFL).forEach(function(k){ant[k]=k==='claims'?(tgt.claims||[]).join(' | '):String(tgt[k]==null?'':tgt[k])});
+      Object.keys(data).forEach(function(k){tgt[k]=data[k]});tgt.photo=pendImg('photo',tgt.photo);
+      if(admin)addLog('Perfil de '+tgt.name+' atualizado pelo Mestre.');
+      else{
+        var mud=[];
+        Object.keys(DIFL).forEach(function(k){
+          var d=k==='claims'?(tgt.claims||[]).join(' | '):String(tgt[k]==null?'':tgt[k]);
+          if(ant[k]!==d)mud.push(DIFL[k]+': '+corta(ant[k])+' → '+corta(d));
+        });
+        if(fot!==(tgt.photo||''))mud.push('trocou a foto');
+        addLog(mud.length?'ALTERAÇÃO · '+tgt.name+' editou a própria ficha — '+mud.join(' · '):'Perfil de '+tgt.name+' salvo sem mudanças.');
+      }
+    }
     else{
       var mx=S.players.reduce(function(m,x){return Math.max(m,Number(x.num)||0)},0);
       var np={id:uid('p'),num:String(mx+37).padStart(4,'0'),hue:Math.floor(Math.random()*360),photo:pendImg('photo',null),active:true,notes:''};
