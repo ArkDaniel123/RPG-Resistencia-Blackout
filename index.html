@@ -1589,7 +1589,8 @@ function itemRow(x,extra){
   return '<div class="irow">'+lead+'<div class="grow"><strong>'+esc(x.name)+'</strong><span class="small muted">'+k+' · <span class="tag s'+x.stage+'">'+STAGES[x.stage]+'</span>'+(x.origin==='jogador'?' · <span class="tag own">Criado pelo jogador</span>':'')+(x.doc&&x.doc.t?' · <button type="button" class="tag txt" data-act="doc-view" data-id="'+x.id+'" title="Ver a ficha em texto">TXT</button>':'')+'</span><div class="desc'+(txt?'':' none')+'">'+(txt?esc(txt):'Sem descrição')+'</div></div>'+(extra||'')+
     (x.origin==='jogador'?'<button class="btn sm primary" data-act="official" data-id="'+x.id+'">'+ic('star')+'Oficializar</button>':'')+
     '<button class="btn sm" data-act="edit-item" data-id="'+x.id+'">'+ic('edit')+'Editar</button>'+
-    (x.owner==='vault'?'':'<button class="btn sm" data-act="to-vault" data-id="'+x.id+'">'+ic('trash')+'Retirar</button>')+'</div>';
+    (x.owner==='vault'?'':'<button class="btn sm" data-act="to-vault" data-id="'+x.id+'" title="Tira do jogador e devolve ao cofre">'+ic('vault')+'Retirar</button>')+
+    '<button class="btn sm danger" data-act="del-item" data-id="'+x.id+'" title="Apaga o item de vez">'+ic('trash')+'Excluir</button></div>';
 }
 function admPlayers(){
   if(!ui.sel||!pl(ui.sel))ui.sel=S.players.length?S.players[0].id:null;
@@ -2212,6 +2213,20 @@ document.addEventListener('click',function(e){
     }
     return;
   }
+  if(a==='del-item'){
+    var di=it(id);if(!di)return;
+    var ond=di.owner==='vault'?'do cofre':'da mochila de '+((pl(di.owner)||{}).name||'um jogador');
+    setModal(modalWrap('Excluir item',
+      '<div class="stack"><p>Apagar <strong>'+esc(di.name)+'</strong> '+ond+', de vez. Some para todo mundo e não tem como desfazer.</p>'+
+      (di.owner!=='vault'?'<p class="small muted">Se for só tomar de volta, feche isto e use <strong>Retirar</strong> — aí o item volta para o cofre.</p>':'')+
+      '<button class="btn danger" data-act="del-item-ok" data-id="'+di.id+'">'+ic('trash')+'Excluir definitivamente</button></div>'));
+    return}
+  if(a==='del-item-ok'){
+    var dj=it(id);if(!dj)return;var djn=dj.name;
+    S.items=S.items.filter(function(x){return x.id!==dj.id});
+    addLog('Item "'+djn+'" excluído pelo Mestre.');
+    save();setModal(null);render();toast('Item excluído.');
+    return}
   if(a==='del-player'){
     var dp=pl(id);if(!dp)return;
     var nit=S.items.filter(function(x){return x.owner===dp.id}).length;
